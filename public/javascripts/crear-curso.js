@@ -123,23 +123,12 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
 
       <div class="mb-2">
-
         <label class="form-label">Imagen de apoyo del ejercicio</label>
         <input class="form-control mb-2" data-field="imagenFile" type="file" accept="image/*">
         <input class="form-control" data-field="imagenUrl" type="url" placeholder="O pega una URL de imagen: https://..." value="${escapeHtml(imagenInicial)}">
         <small class="text-muted">Puedes subir una imagen desde tu PC o pegar una URL. Esta imagen se mostrará dentro del minijuego.</small>
         <img class="mt-2" data-preview="imagen" src="${escapeHtml(imagenInicial)}" alt="Vista previa" style="${imagenInicial ? '' : 'display:none;'} width:100%; max-height:180px; object-fit:cover; border-radius:14px;">
-
-        <label class="form-label">Imagen de apoyo (opcional)</label>
-        <input
-          class="form-control"
-          data-field="imagenUrl"
-          type="url"
-          placeholder="Pega una URL de imagen: https://..."
-          value="${escapeHtml(ejercicio?.imagenUrl || '')}"
-        >
-        <small class="text-muted">Si agregas una imagen, aparecerá dentro del ejercicio. Si lo dejas vacío, no se mostrará nada.</small>
-    </div>
+      </div>
 
       <div class="mb-2">
         <label class="form-label">Video de apoyo (opcional)</label>
@@ -278,6 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const opcionesRaw = card.querySelector('[data-field="opciones"]').value;
         const imagenFileInput = card.querySelector('[data-field="imagenFile"]');
         const imagenUrlInput = card.querySelector('[data-field="imagenUrl"]');
+
         const imagenSubida = imagenFileInput?.files?.[0]
           ? await subirImagen(imagenFileInput.files[0])
           : (imagenUrlInput?.value.trim() || '');
