@@ -74,18 +74,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const formData = new FormData();
     formData.append('imagen', file);
 
-    const res = await fetch('/uploads/imagenes', {
-      method: 'POST',
-      body: formData
-    });
+    try {
+      const { data } = await axios.post('/uploads/imagenes', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
 
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      throw new Error(data.mensaje || 'No se pudo subir la imagen');
+      return data.url;
+    } catch (error) {
+      throw new Error(error.response?.data?.mensaje || 'No se pudo subir la imagen');
     }
-
-    return data.url;
   }
 
   iconButtons.forEach((btn) => {
@@ -307,22 +306,15 @@ document.addEventListener('DOMContentLoaded', () => {
         ejercicios
       };
 
-      const res = await fetch(isEditMode && cursoId ? `/api/cursos/${cursoId}` : '/cursos/nuevo', {
-        method: isEditMode && cursoId ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      const response = isEditMode && cursoId
+        ? await axios.put(`/api/cursos/${cursoId}`, payload)
+        : await axios.post('/cursos/nuevo', payload);
 
-      const data = await res.json();
+      const data = response.data;
 
-      if (!res.ok) {
-        alert(data.mensaje || 'Error al guardar el curso');
-        return;
-      }
-
-      window.location.href = `/principal?nombre=${encodeURIComponent(nombreUsuario)}&userid=${encodeURIComponent(userId)}&success=${encodeURIComponent('Curso guardado correctamente')}`;
+      window.location.href = `/principal?nombre=${encodeURIComponent(nombreUsuario)}&userid=${encodeURIComponent(userId)}&success=${encodeURIComponent(data.mensaje || 'Curso guardado correctamente')}`;
     } catch (err) {
-      alert(err.message || 'Error al guardar curso');
+      alert(err.response?.data?.mensaje || err.message || 'Error al guardar curso');
     }
   });
 });
