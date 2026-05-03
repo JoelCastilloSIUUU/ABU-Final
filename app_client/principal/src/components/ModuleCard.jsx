@@ -2,7 +2,7 @@ import React from 'react';
 
 function ModuleCard({ item, href, userNombre, userid, buildUserQuery }) {
 
-  // 👉 fallback por si NO se pasa la función
+
   const query = buildUserQuery
     ? buildUserQuery(userNombre, userid)
     : `nombre=${encodeURIComponent(userNombre || 'Usuario')}&userid=${encodeURIComponent(userid || '')}`;
