@@ -1,0 +1,195 @@
+doctype html
+html(lang="es")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    title #{title}
+
+    link(
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    )
+
+    link(
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    )
+
+    style.
+      body {
+        background: #f5f7fb;
+        font-family: Arial, sans-serif;
+      }
+
+      .perfil-header {
+        color: white;
+        border-radius: 24px;
+        padding: 40px;
+        margin-bottom: 30px;
+      }
+
+      .foto-perfil {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 5px solid white;
+        background: white;
+      }
+
+      .card-custom {
+        background: white;
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        margin-bottom: 24px;
+      }
+
+      .curso-item {
+        border: 1px solid #eee;
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+
+      .progress {
+        height: 18px;
+        border-radius: 20px;
+      }
+
+      .btn-save {
+        border-radius: 14px;
+        font-weight: bold;
+      }
+
+  body
+    .container.py-5
+
+      if success
+        .alert.alert-success.shadow-sm
+          i.bi.bi-check-circle-fill.me-2
+          = success
+
+      if error
+        .alert.alert-danger.shadow-sm
+          i.bi.bi-exclamation-triangle-fill.me-2
+          = error
+
+      .perfil-header.text-center(
+        style=`background:${usuario.colorCard || '#FF8C00'}`
+      )
+
+        if usuario.fotoPerfil
+          img.foto-perfil(src=usuario.fotoPerfil)
+        else
+          img.foto-perfil(src="https://cdn-icons-png.flaticon.com/512/149/149071.png")
+
+        h1.mt-4.fw-bold= usuario.nombre
+        p.mb-0.opacity-75= usuario.email
+
+      .row.g-4
+
+        .col-lg-5
+
+          .card-custom
+
+            h3.fw-bold.mb-4
+              i.bi.bi-person-gear.me-2
+              | Editar perfil
+
+            form(
+              action="/perfil/editar"
+              method="POST"
+              enctype="multipart/form-data"
+            )
+
+              input(
+                type="hidden"
+                name="userid"
+                value=userid
+              )
+
+              .mb-4
+                label.form-label.fw-semibold Nombre
+                input.form-control.form-control-lg(
+                  type="text"
+                  name="nombre"
+                  value=usuario.nombre
+                  required
+                )
+
+              .mb-4
+                label.form-label.fw-semibold Color de la card principal
+                input.form-control.form-control-color(
+                  type="color"
+                  name="colorCard"
+                  value=usuario.colorCard || '#FF8C00'
+                )
+
+              .mb-4
+                label.form-label.fw-semibold Foto de perfil
+                input.form-control(
+                  type="file"
+                  name="fotoPerfil"
+                  accept="image/*"
+                )
+
+              button.btn.btn-dark.w-100.btn-lg.btn-save(type="submit")
+                i.bi.bi-floppy-fill.me-2
+                | Guardar cambios
+
+        .col-lg-7
+
+          .card-custom
+
+            h3.fw-bold.mb-4
+              i.bi.bi-book-half.me-2
+              | Cursos realizados
+
+            if cursosEnrolados.length
+
+              each curso in cursosEnrolados
+
+                .curso-item
+
+                  .d-flex.justify-content-between.align-items-center.mb-2
+                    h5.fw-bold.mb-0= curso.nombreCurso
+                    span.badge.bg-dark
+                      | #{curso.progreso || 0}%
+
+                  .progress
+                    .progress-bar.bg-success(
+                      role="progressbar"
+                      style=`width:${curso.progreso || 0}%`
+                    )
+
+            else
+
+              p.text-muted.mb-0
+                | Todavía no has realizado cursos.
+
+          .card-custom
+
+            h3.fw-bold.mb-4
+              i.bi.bi-journal-richtext.me-2
+              | Cursos creados por ti
+
+            if cursosCreados.length
+
+              each curso in cursosCreados
+
+                .curso-item
+
+                  h5.fw-bold= curso.nombre
+
+                  p.text-muted.mb-2
+                    = curso.descripcion || 'Curso personalizado'
+
+                  small.text-secondary
+                       i.bi.bi-list-check.me-1
+                       | #{curso.ejercicios && curso.ejercicios.length ? curso.ejercicios.length : 0} ejercicios
+
+            else
+
+              p.text-muted.mb-0
+                | Aún no has creado cursos personalizados.

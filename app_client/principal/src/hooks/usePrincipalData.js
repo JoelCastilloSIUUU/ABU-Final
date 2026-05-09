@@ -1,6 +1,40 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
+const MODULOS_BASE = ['whatsapp', 'youtube', 'camara', 'navegador', 'ajustes', 'llamadas'];
+
+function calcularProgresoGeneral(usuario) {
+  const progresoModulos = usuario.progresoModulos || {};
+  const progresoCursos = usuario.progresoCursos || [];
+
+  const modulosCompletados = MODULOS_BASE.filter((modulo) => {
+    return progresoModulos[modulo]?.completado === true;
+  }).length;
+
+  const cursosDinamicosCompletados = progresoCursos.filter((curso) => {
+    return curso.completado === true || Number(curso.porcentaje || 0) >= 100;
+  }).length;
+
+  return {
+    completados: modulosCompletados,
+    total: MODULOS_BASE.length
+  };
+}
+
+function obtenerProgresoCurso(usuario, cursoId, progresoFallback = 0) {
+  const progresoCursos = usuario.progresoCursos || [];
+
+  const progresoEncontrado = progresoCursos.find((item) => {
+    return String(item.cursoId) === String(cursoId);
+  });
+
+  if (progresoEncontrado) {
+    return Number(progresoEncontrado.porcentaje || 0);
+  }
+
+  return Number(progresoFallback || 0);
+}
+
 export function usePrincipalData(userid, userNombre) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -9,7 +43,7 @@ export function usePrincipalData(userid, userNombre) {
   const [reviewsByCourse, setReviewsByCourse] = useState({});
   const [progressText, setProgressText] = useState('0/6');
 
-  async function loadData() {
+  async function loadData(message = '') {
     if (!userid) {
       setLoading(false);
       return;
@@ -19,23 +53,26 @@ export function usePrincipalData(userid, userNombre) {
       setLoading(true);
       setError('');
 
-      // 👇 usuario
       const { data: usuario } = await axios.get(`/api/users/${userid}`);
-
-      // 👇 cursos creados
       const { data: created } = await axios.get(`/api/cursos?creador=${userid}&origen=dynamic`);
 
-      const activos = (usuario.cursosEnrolados || []).map((curso) => ({
-        ...curso,
-        progreso: curso.progreso || 0
-      }));
+      const activos = (usuario.cursosEnrolados || []).map((curso) => {
+        const cursoId = curso.cursoId?._id || curso.cursoId || curso._id;
+
+        return {
+          ...curso,
+          cursoId,
+          progreso: obtenerProgresoCurso(usuario, cursoId, curso.progreso)
+        };
+      });
 
       const creados = (Array.isArray(created) ? created : []).map((curso) => ({
         ...curso,
-        nombre: curso.nombre || 'Curso personalizado'
+        cursoId: curso._id || curso.cursoId,
+        nombre: curso.nombre || 'Curso personalizado',
+        progreso: obtenerProgresoCurso(usuario, curso._id || curso.cursoId, 0)
       }));
 
-      // 👇 reseñas
       const reviewEntries = await Promise.all(
         activos.map(async (curso) => {
           try {
@@ -47,11 +84,12 @@ export function usePrincipalData(userid, userNombre) {
         })
       );
 
+      const progresoGeneral = calcularProgresoGeneral(usuario);
+
       setCursosActivos(activos);
       setCursosCreados(creados);
       setReviewsByCourse(Object.fromEntries(reviewEntries));
-      setProgressText(`${activos.length}/6`);
-
+      setProgressText(`${progresoGeneral.completados}/${progresoGeneral.total || 6}`);
     } catch (err) {
       setError(err.response?.data?.mensaje || 'Error cargando datos');
     } finally {

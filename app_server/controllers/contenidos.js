@@ -1326,6 +1326,31 @@ const principal = async (req, res) => {
     }
   }
 
+const actualizarPerfil = async (req, res) => {
+  const { userid, nombre, colorCard } = req.body;
+
+  if (!userid) {
+    return res.redirect('/?error=Debes iniciar sesión');
+  }
+
+  try {
+    const payload = {
+      nombre,
+      colorCard
+    };
+
+    if (req.file) {
+      payload.fotoPerfil = `/uploads/cursos/${req.file.filename}`;
+    }
+
+    await axios.put(`${getApiBase(req)}/users/${userid}`, payload);
+
+    res.redirect(`/perfil/editar?nombre=${encodeURIComponent(nombre || 'Usuario')}&userid=${encodeURIComponent(userid)}&success=${encodeURIComponent('Perfil actualizado correctamente')}`);
+  } catch (err) {
+    res.redirect(`/perfil/editar?nombre=${encodeURIComponent(nombre || 'Usuario')}&userid=${encodeURIComponent(userid)}&error=${encodeURIComponent(err.response?.data?.mensaje || 'No se pudo actualizar el perfil')}`);
+  }
+};
+  
   res.render('principal', {
     title: `¡Hola, ${nombre}!`,
     subtitle: 'Sigamos aprendiendo juntos',
@@ -1837,8 +1862,119 @@ async function dynamicCourseCompletado(req, res) {
   }
 }
 
+const editarPerfil = async (req, res) => {
+  const nombre = req.query.nombre || 'Usuario';
+  const userid = req.query.userid || '';
+
+  if (!userid) {
+    return res.redirect('/?error=Debes iniciar sesión');
+  }
+
+  try {
+    const response = await axios.get(`${getApiBase(req)}/users/${userid}`);
+    const usuario = response.data;
+
+    const progresoModulos = usuario.progresoModulos || {};
+    const progresoCursos = usuario.progresoCursos || [];
+
+    const modulosBase = [
+      {
+        nombreCurso: 'WhatsApp',
+        progreso: progresoModulos.whatsapp?.completado ? 100 : 0
+      },
+      {
+        nombreCurso: 'YouTube',
+        progreso: progresoModulos.youtube?.completado ? 100 : 0
+      },
+      {
+        nombreCurso: 'Cámara',
+        progreso: progresoModulos.camara?.completado ? 100 : 0
+      },
+      {
+        nombreCurso: 'Navegador',
+        progreso: progresoModulos.navegador?.completado ? 100 : 0
+      },
+      {
+        nombreCurso: 'Ajustes',
+        progreso: progresoModulos.ajustes?.completado ? 100 : 0
+      },
+      {
+        nombreCurso: 'Llamadas',
+        progreso: progresoModulos.llamadas?.completado ? 100 : 0
+      }
+    ];
+
+    const cursosUsuario = (usuario.cursosEnrolados || []).map((curso) => {
+      const progresoEncontrado = progresoCursos.find(
+        (p) => String(p.cursoId) === String(curso.cursoId)
+      );
+
+      return {
+        ...curso,
+        progreso: progresoEncontrado?.porcentaje || curso.progreso || 0
+      };
+    });
+
+    const cursosConProgreso = [
+      ...modulosBase,
+      ...cursosUsuario
+    ];
+
+    const cursosCreadosResponse = await axios.get(
+      `${getApiBase(req)}/cursos?creador=${userid}&origen=dynamic`
+    );
+
+    res.render('editar_perfil', {
+      title: 'Editar perfil',
+      userid,
+      userNombre: usuario.nombre || nombre,
+      usuario,
+      cursosEnrolados: cursosConProgreso,
+      cursosCreados: cursosCreadosResponse.data || [],
+      success: req.query.success || '',
+      error: req.query.error || ''
+    });
+
+  } catch (err) {
+    return res.redirect(
+      `/principal?nombre=${encodeURIComponent(nombre)}&userid=${encodeURIComponent(userid)}&error=${encodeURIComponent('No se pudo cargar el perfil')}`
+    );
+  }
+};
+
+const actualizarPerfil = async (req, res) => {
+  const { userid, nombre, colorCard } = req.body;
+
+  if (!userid) {
+    return res.redirect('/?error=Debes iniciar sesión');
+  }
+
+  try {
+    const payload = {
+      nombre,
+      colorCard
+    };
+
+    if (req.file) {
+      payload.fotoPerfil = `/uploads/cursos/${req.file.filename}`;
+    }
+
+    await axios.put(`${getApiBase(req)}/users/${userid}`, payload);
+
+    res.redirect(
+      `/perfil/editar?nombre=${encodeURIComponent(nombre || 'Usuario')}&userid=${encodeURIComponent(userid)}&success=${encodeURIComponent('Perfil actualizado correctamente')}`
+    );
+  } catch (err) {
+    res.redirect(
+      `/perfil/editar?nombre=${encodeURIComponent(nombre || 'Usuario')}&userid=${encodeURIComponent(userid)}&error=${encodeURIComponent(err.response?.data?.mensaje || 'No se pudo actualizar el perfil')}`
+    );
+  }
+};
+
 module.exports = {
   principal,
+  editarPerfil,
+  actualizarPerfil,
   whatsapp: moduleHome,
   whatsappExercise: moduleExercise,
   whatsappExercisePaso: moduleExercisePaso,

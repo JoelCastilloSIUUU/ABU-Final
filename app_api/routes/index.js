@@ -1,9 +1,47 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const ctrlCursos = require('../controllers/cursos');
 const ctrlAuth = require('../controllers/auth');
 const ctrlResenas = require('../controllers/resenas');
+
+const carpetaPerfiles = path.join(__dirname, '../../public/uploads/perfiles');
+
+if (!fs.existsSync(carpetaPerfiles)) {
+  fs.mkdirSync(carpetaPerfiles, { recursive: true });
+}
+
+const storagePerfil = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, carpetaPerfiles);
+  },
+  filename: (req, file, cb) => {
+    const extension = path.extname(file.originalname);
+    const nombreArchivo = `perfil-${req.params.userid}-${Date.now()}${extension}`;
+    cb(null, nombreArchivo);
+  }
+});
+
+const filtroImagen = (req, file, cb) => {
+  const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+
+  if (tiposPermitidos.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Solo se permiten imágenes JPG, PNG o WEBP'));
+  }
+};
+
+const subirFotoPerfil = multer({
+  storage: storagePerfil,
+  fileFilter: filtroImagen,
+  limits: {
+    fileSize: 2 * 1024 * 1024
+  }
+});
 
 router.post('/register', ctrlAuth.registro);
 router.post('/login', ctrlAuth.login);
@@ -11,7 +49,7 @@ router.post('/login', ctrlAuth.login);
 router
   .route('/users/:userid')
   .get(ctrlAuth.usuarioLeerUno)
-  .put(ctrlAuth.usuarioActualizar)
+  .put(subirFotoPerfil.single('fotoPerfil'), ctrlAuth.usuarioActualizar)
   .delete(ctrlAuth.usuarioBorrar);
 
 router.post('/users/:userid/cursos', ctrlAuth.usuarioInscribirCurso);

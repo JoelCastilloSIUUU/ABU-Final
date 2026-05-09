@@ -91,6 +91,13 @@ const ensureCourseProgress = (usuario, cursoId, totalEjercicios = 0) => {
   return item;
 };
 
+const limpiarUsuario = (usuario) => ({
+  id: usuario._id,
+  nombre: usuario.nombre,
+  email: usuario.email,
+  fotoPerfil: usuario.fotoPerfil || '',
+  colorCard: usuario.colorCard || '#4f46e5'
+});
 
 const registro = async (req, res) => {
   const { nombre, email, password } = req.body;
@@ -102,16 +109,19 @@ const registro = async (req, res) => {
   }
 
   try {
-    const nuevoUsuario = new Usuario({ nombre, email, password });
+    const nuevoUsuario = new Usuario({
+      nombre,
+      email,
+      password,
+      fotoPerfil: '',
+      colorCard: '#4f46e5'
+    });
+
     await nuevoUsuario.save();
 
     res.status(201).json({
       mensaje: 'Usuario registrado con éxito',
-      usuario: {
-        id: nuevoUsuario._id,
-        nombre: nuevoUsuario.nombre,
-        email: nuevoUsuario.email
-      }
+      usuario: limpiarUsuario(nuevoUsuario)
     });
   } catch (err) {
     if (err.code === 11000) {
@@ -142,11 +152,7 @@ const login = async (req, res) => {
 
     res.status(200).json({
       mensaje: 'Login exitoso',
-      usuario: {
-        id: usuario._id,
-        nombre: usuario.nombre,
-        email: usuario.email
-      }
+      usuario: limpiarUsuario(usuario)
     });
   } catch (err) {
     res.status(500).json({ mensaje: 'Error al iniciar sesión', error: err.message });
@@ -155,13 +161,22 @@ const login = async (req, res) => {
 
 const usuarioLeerUno = async (req, res) => {
   try {
-    const usuario = await Usuario.findById(req.params.userid).lean();
+    const usuario = await Usuario.findById(req.params.userid)
+      .populate('cursosEnrolados.cursoId')
+      .lean();
 
     if (!usuario) {
       return res.status(404).json({ mensaje: 'Usuario no encontrado' });
     }
 
-    res.status(200).json(usuario);
+    const cursosCreados = await Curso.find({ creador: req.params.userid }).lean();
+
+    res.status(200).json({
+      ...usuario,
+      fotoPerfil: usuario.fotoPerfil || '',
+      colorCard: usuario.colorCard || '#4f46e5',
+      cursosCreados
+    });
   } catch (err) {
     res.status(500).json({ mensaje: 'Error al obtener usuario', error: err.message });
   }
@@ -175,16 +190,41 @@ const usuarioActualizar = async (req, res) => {
       return res.status(404).json({ mensaje: 'Usuario no encontrado' });
     }
 
-    usuario.nombre = req.body.nombre ?? usuario.nombre;
-    usuario.email = req.body.email ?? usuario.email;
-    usuario.password = req.body.password ?? usuario.password;
+    if (req.body.nombre !== undefined) {
+      usuario.nombre = req.body.nombre;
+    }
+
+    if (req.body.email !== undefined) {
+      usuario.email = req.body.email;
+    }
+
+    if (req.body.password !== undefined) {
+      usuario.password = req.body.password;
+    }
+
+    if (req.body.colorCard !== undefined) {
+      usuario.colorCard = req.body.colorCard;
+    }
+
+    if (req.body.fotoPerfil !== undefined) {
+      usuario.fotoPerfil = req.body.fotoPerfil;
+    }
+
+    if (req.file) {
+      usuario.fotoPerfil = `/uploads/perfiles/${req.file.filename}`;
+    }
+
     await usuario.save();
 
     res.status(200).json({
       mensaje: 'Datos del perfil actualizados',
-      usuario
+      usuario: limpiarUsuario(usuario)
     });
   } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ mensaje: 'Ya existe un usuario con ese correo' });
+    }
+
     res.status(500).json({ mensaje: 'Error al actualizar usuario', error: err.message });
   }
 };
@@ -197,7 +237,10 @@ const usuarioBorrar = async (req, res) => {
       return res.status(404).json({ mensaje: 'Usuario no encontrado' });
     }
 
-    res.status(200).json({ mensaje: 'Cuenta de usuario eliminada correctamente', usuarioId: req.params.userid });
+    res.status(200).json({
+      mensaje: 'Cuenta de usuario eliminada correctamente',
+      usuarioId: req.params.userid
+    });
   } catch (err) {
     res.status(500).json({ mensaje: 'Error al eliminar usuario', error: err.message });
   }
@@ -288,7 +331,10 @@ const usuarioActualizarProgreso = async (req, res) => {
       return res.status(404).json({ mensaje: 'Usuario no encontrado' });
     }
 
-    const curso = usuario.cursosEnrolados.find((c) => String(c.cursoId) === String(req.params.cursoid));
+    const curso = usuario.cursosEnrolados.find(
+      (c) => String(c.cursoId) === String(req.params.cursoid)
+    );
+
     if (!curso) {
       return res.status(404).json({ mensaje: 'Curso no encontrado en la lista del usuario' });
     }
@@ -316,6 +362,7 @@ const usuarioEliminarCurso = async (req, res) => {
     }
 
     const cursoOriginal = usuario.cursosEnrolados.length;
+
     usuario.cursosEnrolados = usuario.cursosEnrolados.filter(
       (c) => String(c.cursoId) !== String(req.params.cursoid) && String(c._id) !== String(req.params.cursoid)
     );
@@ -325,6 +372,7 @@ const usuarioEliminarCurso = async (req, res) => {
     }
 
     await usuario.save();
+
     res.status(200).json({
       mensaje: 'Curso eliminado correctamente de la lista del usuario',
       usuarioId: req.params.userid,
@@ -398,7 +446,6 @@ const usuarioCompletarEjercicioModulo = async (req, res) => {
   }
 };
 
-
 const usuarioLeerProgresoCurso = async (req, res) => {
   try {
     const usuario = await Usuario.findById(req.params.userid);
@@ -447,6 +494,7 @@ const usuarioCompletarEjercicioCurso = async (req, res) => {
     }
 
     const progreso = ensureCourseProgress(usuario, curso._id, curso.ejercicios.length);
+
     const yaCompletado = progreso.ejerciciosCompletados.some(
       (id) => String(id) === String(ejercicioid)
     );

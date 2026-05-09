@@ -22,12 +22,14 @@ router.get('/', ctrlAuth.login);
 router.get('/registro', ctrlAuth.registro);
 router.get('/principal', ctrlContenidos.principal);
 
+router.get('/perfil/editar', ctrlContenidos.editarPerfil);
+router.post('/perfil/editar', upload.single('fotoPerfil'), ctrlContenidos.actualizarPerfil);
+
 router.post('/login', ctrlAuth.doLogin);
 router.post('/register', ctrlAuth.doRegister);
 router.post('/principal/cursos', ctrlContenidos.addCursoPersonalizado);
 router.post('/principal/cursos/:cursoid/delete', ctrlContenidos.deleteCursoPersonalizado);
 router.post('/principal/cursos/:cursoid/resenas', ctrlContenidos.crearResenaCurso);
-
 
 router.post('/uploads/imagenes', upload.single('imagen'), (req, res) => {
   if (!req.file) {

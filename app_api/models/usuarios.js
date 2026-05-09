@@ -27,6 +27,16 @@ const usuarioSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true },
   password: { type: String, required: true },
 
+  fotoPerfil: {
+    type: String,
+    default: ''
+  },
+
+  colorCard: {
+    type: String,
+    default: '#4f46e5'
+  },
+
   cursosEnrolados: [enrolamientoSchema],
 
   progresoModulos: {
