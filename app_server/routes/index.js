@@ -45,7 +45,9 @@ router.post('/uploads/imagenes', upload.single('imagen'), (req, res) => {
 router.get('/cursos/nuevo', ctrlContenidos.formCrearCurso);
 router.post('/cursos/nuevo', ctrlContenidos.crearCursoDinamico);
 
-/* IMPORTANTE: esta ruta debe ir antes de /cursos/:cursoid */
+router.get('/cursos/:cursoid/editar', ctrlContenidos.formEditarCurso);
+router.post('/cursos/:cursoid/editar', ctrlContenidos.actualizarCursoDinamico);
+
 router.get('/cursos/:cursoid/editar', ctrlContenidos.formEditarCurso);
 
 router.get('/cursos/:cursoid', ctrlContenidos.dynamicCourseHome);

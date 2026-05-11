@@ -1,3 +1,5 @@
+
+
 document.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('ejerciciosContainer');
   const addBtn = document.getElementById('addEjercicioBtn');
@@ -125,12 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <label class="form-label">Imagen de apoyo del ejercicio</label>
         <input class="form-control mb-2" data-field="imagenFile" type="file" accept="image/*">
         <input class="form-control" data-field="imagenUrl" type="url" placeholder="O pega una URL de imagen: https://..." value="${escapeHtml(imagenInicial)}">
-        <small class="text-muted">Puedes subir una imagen desde tu PC o pegar una URL. Esta imagen se mostrará dentro del minijuego.</small>
-        <img class="mt-2" data-preview="imagen" src="${escapeHtml(imagenInicial)}" alt="Vista previa" style="${imagenInicial ? '' : 'display:none;'} width:100%; max-height:180px; object-fit:cover; border-radius:14px;">
       </div>
 
       <div class="mb-2">
-        <label class="form-label">Video de apoyo (opcional)</label>
+        <label class="form-label">Video de apoyo</label>
         <input
           class="form-control"
           data-field="videoUrl"
@@ -138,7 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
           placeholder="Pega link de YouTube"
           value="${escapeHtml(ejercicio?.videoUrl || '')}"
         >
-        <small class="text-muted">Puedes pegar un link normal de YouTube; se convertirá automáticamente.</small>
       </div>
 
       <div class="mb-2">
@@ -164,14 +163,13 @@ document.addEventListener('DOMContentLoaded', () => {
         <input class="form-control" data-field="respuestaCorrecta" required value="${escapeHtml(ejercicio?.respuestaCorrecta || '')}">
       </div>
 
-      <button type="button" class="btn btn-sm btn-outline-danger" data-remove>Eliminar ejercicio</button>
+      <button type="button" class="btn btn-sm btn-outline-danger" data-remove>
+        Eliminar ejercicio
+      </button>
     `;
 
     const tipo = div.querySelector('[data-field="tipo"]');
     const opcionesWrap = div.querySelector('.opciones-wrap');
-    const imagenFileInput = div.querySelector('[data-field="imagenFile"]');
-    const imagenUrlInput = div.querySelector('[data-field="imagenUrl"]');
-    const preview = div.querySelector('[data-preview="imagen"]');
 
     const actualizarVistaTipo = () => {
       opcionesWrap.style.display = tipo.value === 'multiple' ? 'block' : 'none';
@@ -179,17 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     tipo.addEventListener('change', actualizarVistaTipo);
     actualizarVistaTipo();
-
-    imagenFileInput.addEventListener('change', () => {
-      const file = imagenFileInput.files?.[0];
-      mostrarPreview(preview, file ? URL.createObjectURL(file) : imagenUrlInput.value.trim());
-    });
-
-    imagenUrlInput.addEventListener('input', () => {
-      if (!imagenFileInput.files?.[0]) {
-        mostrarPreview(preview, imagenUrlInput.value.trim());
-      }
-    });
 
     div.querySelector('[data-remove]').addEventListener('click', () => {
       div.remove();
@@ -214,9 +201,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('nombreCurso').value = initialCourse.nombre || '';
     document.getElementById('descripcionCurso').value = initialCourse.descripcion || '';
-    document.getElementById('colorCurso').value = initialCourse.color_hex || '#FF8C00';
+    document.getElementById('colorCurso').value =
+      initialCourse.color_hex || '#FF8C00';
 
-    const ejercicios = Array.isArray(initialCourse.ejercicios) ? initialCourse.ejercicios : [];
+    const ejercicios = Array.isArray(initialCourse.ejercicios)
+      ? initialCourse.ejercicios
+      : [];
 
     if (!ejercicios.length) {
       container.appendChild(crearBloque());
@@ -244,57 +234,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const nombreCurso = document.getElementById('nombreCurso').value.trim();
     const descripcionCurso = document.getElementById('descripcionCurso').value.trim();
     const colorCurso = document.getElementById('colorCurso').value;
-    const iconoCurso = document.getElementById('iconoCurso').value.trim() || 'bi-bookmark-fill';
-
-    if (!userId) {
-      alert('No se encontró el usuario. Inicia sesión nuevamente.');
-      return;
-    }
-
-    if (!nombreCurso) {
-      alert('Debes escribir un nombre para el curso.');
-      return;
-    }
+    const iconoCurso = document.getElementById('iconoCurso').value.trim();
 
     try {
       const imagenCursoSubida = imagenCursoFile?.files?.[0]
         ? await subirImagen(imagenCursoFile.files[0])
         : (imagenCursoUrl?.value.trim() || '');
 
-      const ejercicios = await Promise.all([...container.children].map(async (card) => {
-        const tipo = card.querySelector('[data-field="tipo"]').value;
-        const opcionesRaw = card.querySelector('[data-field="opciones"]').value;
-        const imagenFileInput = card.querySelector('[data-field="imagenFile"]');
-        const imagenUrlInput = card.querySelector('[data-field="imagenUrl"]');
+const ejercicios = await Promise.all(
+  [...container.children].map(async (card) => {
+    const tipo = card.querySelector('[data-field="tipo"]').value;
+    const opcionesRaw = card.querySelector('[data-field="opciones"]').value;
+    const imagenFileInput = card.querySelector('[data-field="imagenFile"]');
+    const imagenUrlInput = card.querySelector('[data-field="imagenUrl"]');
 
-        const imagenSubida = imagenFileInput?.files?.[0]
-          ? await subirImagen(imagenFileInput.files[0])
-          : (imagenUrlInput?.value.trim() || '');
+    const imagenSubida = imagenFileInput?.files?.[0]
+      ? await subirImagen(imagenFileInput.files[0])
+      : (imagenUrlInput?.value.trim() || '');
 
-        return {
-          titulo: card.querySelector('[data-field="titulo"]').value.trim(),
-          descripcion: card.querySelector('[data-field="descripcion"]').value.trim(),
-          imagenUrl: imagenSubida,
-          videoUrl: transformarYouTube(card.querySelector('[data-field="videoUrl"]').value.trim()),
-          pregunta: card.querySelector('[data-field="pregunta"]').value.trim(),
-          tipo,
-          opciones: tipo === 'multiple'
-            ? opcionesRaw.split('\n').map((x) => x.trim()).filter(Boolean)
-            : [],
-          respuestaCorrecta: card.querySelector('[data-field="respuestaCorrecta"]').value.trim()
-        };
-      }));
-
-      const hayEjercicioInvalido = ejercicios.some((ejercicio) => {
-        if (!ejercicio.titulo || !ejercicio.pregunta || !ejercicio.respuestaCorrecta) return true;
-        if (ejercicio.tipo === 'multiple' && ejercicio.opciones.length < 2) return true;
-        return false;
-      });
-
-      if (hayEjercicioInvalido) {
-        alert('Revisa los ejercicios. Cada ejercicio debe tener título, pregunta, respuesta correcta y, si es múltiple, al menos dos opciones.');
-        return;
-      }
+    return {
+      titulo: card.querySelector('[data-field="titulo"]').value.trim(),
+      descripcion: card.querySelector('[data-field="descripcion"]').value.trim(),
+      imagenUrl: imagenSubida,
+      videoUrl: transformarYouTube(
+        card.querySelector('[data-field="videoUrl"]').value.trim()
+      ),
+      pregunta: card.querySelector('[data-field="pregunta"]').value.trim(),
+      tipo,
+      opciones:
+        tipo === 'multiple'
+          ? opcionesRaw.split('\n').map((x) => x.trim()).filter(Boolean)
+          : [],
+      respuestaCorrecta: card.querySelector('[data-field="respuestaCorrecta"]').value.trim()
+    };
+  })
+);
 
       const payload = {
         userId,
@@ -306,15 +280,30 @@ document.addEventListener('DOMContentLoaded', () => {
         ejercicios
       };
 
-      const response = isEditMode && cursoId
-        ? await axios.put(`/api/cursos/${cursoId}`, payload)
-        : await axios.post('/cursos/nuevo', payload);
+      let response;
+
+      if (isEditMode && cursoId) {
+        response = await axios.post(`/cursos/${cursoId}/editar`, payload);
+      } else {
+        response = await axios.post('/cursos/nuevo', payload);
+      }
 
       const data = response.data;
 
-      window.location.href = `/principal?nombre=${encodeURIComponent(nombreUsuario)}&userid=${encodeURIComponent(userId)}&success=${encodeURIComponent(data.mensaje || 'Curso guardado correctamente')}`;
+      window.location.href =
+        `/principal?nombre=${encodeURIComponent(nombreUsuario)}` +
+        `&userid=${encodeURIComponent(userId)}` +
+        `&success=${encodeURIComponent(
+          data.mensaje || 'Curso guardado correctamente'
+        )}`;
+
     } catch (err) {
-      alert(err.response?.data?.mensaje || err.message || 'Error al guardar curso');
+      console.error(err);
+      alert(
+        err.response?.data?.mensaje ||
+        err.message ||
+        'Error al guardar curso'
+      );
     }
   });
 });

@@ -60,9 +60,10 @@ async function requestJson(url, options = {}) {
 function buildManagedCourse(curso, userNombre, userid) {
   const cursoId = curso.cursoId || curso._id;
   const nombreCurso = curso.nombreCurso || curso.nombre || 'Curso personalizado';
+  const colorCurso = curso.color_hex || curso.color || '#FF8C00';
 
   const meta = courseMeta[nombreCurso] || {
-    color: curso.color_hex || curso.color || '#FF8C00',
+    color: colorCurso,
     icono: curso.icono || 'bi-bookmark-fill'
   };
 
@@ -74,6 +75,7 @@ function buildManagedCourse(curso, userNombre, userid) {
     ...curso,
     cursoId,
     nombreCurso,
+    color: colorCurso,
     progreso: curso.progreso || 0,
     href,
     meta
@@ -123,6 +125,9 @@ function PrincipalModuleCard({ item, href, userNombre, userid }) {
 }
 
 function CreatedCourseCard({ curso, userNombre, userid, onDeleted }) {
+  const colorCurso = curso.color_hex || curso.color || '#FF8C00';
+  const hrefCurso = curso.href || `/cursos/${curso.cursoId}?${buildUserQuery(userNombre, userid)}`;
+
   const deleteCreatedCourse = async () => {
     if (!confirm('¿Seguro que quieres eliminar este curso? Esta acción no se puede deshacer.')) return;
 
@@ -133,7 +138,7 @@ function CreatedCourseCard({ curso, userNombre, userid, onDeleted }) {
   return (
     <div className="col-12 col-lg-6 p-0 mb-3">
       <div className="card border-0 shadow-sm module-card principal-module-card position-relative">
-        <CourseImage src={curso.imagenUrl} alt={`Imagen de ${curso.nombre}`} color={curso.color} fallback="Agrega una imagen de apoyo para este curso" />
+        <CourseImage src={curso.imagenUrl} alt={`Imagen de ${curso.nombre}`} color={colorCurso} fallback="Agrega una imagen de apoyo para este curso" />
 
         <div className="position-absolute top-0 end-0 p-2 d-flex gap-2 principal-card-actions">
           <a className="btn btn-sm btn-light shadow-sm principal-action-btn" href={`/cursos/${curso.cursoId}/editar?${buildUserQuery(userNombre, userid)}`} title="Editar curso">
@@ -145,9 +150,9 @@ function CreatedCourseCard({ curso, userNombre, userid, onDeleted }) {
           </button>
         </div>
 
-        <a className="text-decoration-none" href={curso.href}>
+        <a className="text-decoration-none" href={hrefCurso}>
           <div className="p-3 d-flex align-items-center module-card-body principal-created-body">
-            <div className="rounded-4 d-flex justify-content-center align-items-center me-3 module-icon principal-icon" style={{ backgroundColor: curso.color || '#FF8C00' }}>
+            <div className="rounded-4 d-flex justify-content-center align-items-center me-3 module-icon principal-icon" style={{ backgroundColor: colorCurso }}>
               <i className={`bi ${curso.icono || 'bi-journal-text'}`} />
             </div>
 

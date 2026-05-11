@@ -1608,8 +1608,8 @@ function mapDynamicCourseToViewModel(courseDoc) {
     _id: courseDoc._id,
     slug: `cursos/${courseDoc._id}`,
     nombre: courseDoc.nombre,
-    color: courseDoc.color_hex || '#FF8C00',
-    accent: '#D35400',
+    color: courseDoc.color_hex || courseDoc.color || '#FF8C00',
+    accent: courseDoc.color_hex || courseDoc.color || '#D35400',
     light: '#FFF5E6',
     icono: courseDoc.icono || 'bi-bookmark-fill',
     ejercicios: (courseDoc.ejercicios || [])
@@ -1691,12 +1691,43 @@ const formEditarCurso = async (req, res) => {
 
 const crearCursoDinamico = async (req, res) => {
   try {
-    const payload = req.body;
+    const payload = {
+      ...req.body,
+      color_hex: req.body.color_hex || req.body.color || '#FF8C00'
+    };
+
     const response = await axios.post(`${getApiBase(req)}/cursos`, payload);
+
     res.status(201).json(response.data);
   } catch (err) {
     res.status(err.response?.status || 500).json({
       mensaje: err.response?.data?.mensaje || 'No se pudo crear el curso'
+    });
+  }
+};
+
+const actualizarCursoDinamico = async (req, res) => {
+  try {
+    const payload = {
+      ...req.body,
+      color_hex: req.body.color_hex || req.body.color || '#FF8C00'
+    };
+
+    const response = await axios.put(
+      `${getApiBase(req)}/cursos/${req.params.cursoid}`,
+      payload
+    );
+
+    res.json({
+      mensaje: 'Curso actualizado correctamente',
+      curso: response.data
+    });
+
+  } catch (err) {
+    res.status(err.response?.status || 500).json({
+      mensaje:
+        err.response?.data?.mensaje ||
+        'No se pudo actualizar el curso'
     });
   }
 };
@@ -1975,20 +2006,27 @@ module.exports = {
   principal,
   editarPerfil,
   actualizarPerfil,
+
   whatsapp: moduleHome,
   whatsappExercise: moduleExercise,
   whatsappExercisePaso: moduleExercisePaso,
   whatsappExerciseCompletado: moduleExerciseCompletado,
+
   moduleHome,
   moduleExercise,
   moduleExercisePaso,
   moduleExerciseCompletado,
+
   addCursoPersonalizado,
   deleteCursoPersonalizado,
   crearResenaCurso,
+
   formCrearCurso,
   formEditarCurso,
+
   crearCursoDinamico,
+  actualizarCursoDinamico,
+
   dynamicCourseHome,
   dynamicCourseExercise,
   dynamicCoursePaso,

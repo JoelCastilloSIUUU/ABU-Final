@@ -66,12 +66,26 @@ export function usePrincipalData(userid, userNombre) {
         };
       });
 
-      const creados = (Array.isArray(created) ? created : []).map((curso) => ({
-        ...curso,
-        cursoId: curso._id || curso.cursoId,
-        nombre: curso.nombre || 'Curso personalizado',
-        progreso: obtenerProgresoCurso(usuario, curso._id || curso.cursoId, 0)
-      }));
+      const creados = (Array.isArray(created) ? created : []).map((curso) => {
+        const cursoId = curso._id || curso.cursoId;
+
+        return {
+          ...curso,
+          cursoId,
+          nombre: curso.nombre || 'Curso personalizado',
+
+          // FIX COLOR
+          color: curso.color_hex || curso.color || '#FF8C00',
+          color_hex: curso.color_hex || curso.color || '#FF8C00',
+
+          // FIX LINK CURSO
+          href: `/cursos/${cursoId}?nombre=${encodeURIComponent(
+            userNombre || 'Usuario'
+          )}&userid=${encodeURIComponent(userid || '')}`,
+
+          progreso: obtenerProgresoCurso(usuario, cursoId, 0)
+        };
+      });
 
       const reviewEntries = await Promise.all(
         activos.map(async (curso) => {
